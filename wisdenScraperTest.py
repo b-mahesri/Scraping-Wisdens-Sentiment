@@ -18,13 +18,14 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 }
 
-MAX_CONSECUTIVE_FAILURES = 3  # When to stop scraping
+MAX_CONSECUTIVE_FAILURES = 3  # After which, we stop scraping.
+
 
 def rate_limit():
     """
     Suspends execution for a random number of seconds within a given range.
     """
-    sleep_time = random.uniform(5, 8)  # Will return a float, little extra random
+    sleep_time = random.uniform(5, 8)  # This will return a float, which is a little extra random
     print(f"Being polite :) and avoiding Rate Limiting. Sleeping for {sleep_time:.1f} secondzzzzzzz")
     time.sleep(sleep_time)
 
@@ -84,7 +85,6 @@ def parse_article(url):
     """
     Fetches and parses a single article.
     Returns a dict of extracted fields, or None if the fetch failed.
-
     Tested on: 
     - Recent article from 2026: "https://www.wisden.com/series/england-vs-pakistan-m-2026/cricket-features/why-are-pakistan-this-bad-at-test-cricket"
     - Oldest listed article from 2017: "https://www.wisden.com/cricket-news/2017-review-legend-leaves-one-last-gift"
@@ -112,7 +112,7 @@ def parse_article(url):
         get_clean_text(p) for p in paragraphs if get_clean_text(p)
     )
     
-    return {  # Print fields out to check
+    return {
         "url": url,
         "title": title,
         "date": date,
@@ -137,7 +137,7 @@ def get_article_urls(base_url, num_pages):
 
     Returns a set of article URLs.
     """
-    links = set()  # automatic deduplication, but order will be unpredictable
+    links = set()  # Provides automatic deduplication, but order will be unpredictable.
     consecutive_failures = 0
 
     for page in range(num_pages):
@@ -152,10 +152,10 @@ def get_article_urls(base_url, num_pages):
                 break  # End scraping loop
             # else
             rate_limit()
-            continue # go to next iteration in loop, try next url
+            continue # Go to next loop iteration and try next url.
 
         # Else
-        consecutive_failures = 0  # reset
+        consecutive_failures = 0  # Reset.
 
         html = response.text
         soup = BeautifulSoup(html, "html.parser")
@@ -163,8 +163,8 @@ def get_article_urls(base_url, num_pages):
         articles = soup.find_all("article")
         for article in articles:
             a_tag = article.find("a")
-            if (a_tag and a_tag.get('href')):  # Handle missing a tags and links
-                links.add(a_tag.get('href')) # There is only ever one link within an <article>, this is safe to do
+            if (a_tag and a_tag.get('href')):  # Handle missing <a> tags and links.
+                links.add(a_tag.get('href')) # There is only ever one link within an <article>, therefore this is safe to do.
 
         print(f"Listing Page {page + 1}: {len(articles)} articles found")
         rate_limit()
@@ -172,7 +172,7 @@ def get_article_urls(base_url, num_pages):
     print(f"Total {len(links)} article links collected")
     return links
 
-# TODO: Store extracted text
+# TODO: Store the extracted text.
 def scrape_wisden(team_archive, num_pages):
     """
     Scrapes a Wisden team archive and collects article texts.
