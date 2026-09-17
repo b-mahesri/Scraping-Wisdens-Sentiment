@@ -6,8 +6,12 @@ import random
 
 # Reference Links:
 # Wisden: https://www.wisden.com
-# HTTPS Status Codes: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
 # Requests Documentation: https://requests.readthedocs.io/en/latest/
+# Beautiful Soup Documentation: https://beautiful-soup-4.readthedocs.io/en/latest/
+# Time Documentation: https://docs.python.org/3/library/time.html#time.sleep
+# Random Documentation: https://docs.python.org/3/library/random.html
+# HTTPS Status Codes: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
+# Rate Limiting: https://scrape.do/blog/web-scraping-rate-limit/
 
 
 HEADERS = {
@@ -36,8 +40,9 @@ def get_clean_text(tag):
 
 def safe_get(url):
     """
-    Wraps requests.get with error handling for request timeouts,
+    Wraps requests.get() with error handling for request timeouts,
     rate-limit responses (429), and bot-block responses (403/503).
+
     Returns the Response object on success, else returns None.
     """
     try:
@@ -106,8 +111,8 @@ def parse_article(url):
     body_text = "\n".join(
         get_clean_text(p) for p in paragraphs if get_clean_text(p)
     )
-    # Print fields out to check
-    return {
+    
+    return {  # Print fields out to check
         "url": url,
         "title": title,
         "date": date,
@@ -127,7 +132,7 @@ def get_article_urls(base_url, num_pages):
     Uses safe_get() for each page and rate_limit() between each request.
     
     Stops scraping early if MAX_CONSECUTIVE_FAILURES failed page
-    fetches occur in a row, inr order to avoid hammering a
+    fetches occur in a row, in order to avoid hammering a
     server that may be blocking requests.
 
     Returns a set of article URLs.
@@ -147,7 +152,7 @@ def get_article_urls(base_url, num_pages):
                 break  # End scraping loop
             # else
             rate_limit()
-            continue # go to next iteration in loop
+            continue # go to next iteration in loop, try next url
 
         # Else
         consecutive_failures = 0  # reset
@@ -167,54 +172,19 @@ def get_article_urls(base_url, num_pages):
     print(f"Total {len(links)} article links collected")
     return links
 
-
+# TODO: Store extracted text
 def scrape_wisden(team_archive, num_pages):
     """
-    Scrapes a Wisden team archive to collect article texts.
+    Scrapes a Wisden team archive and collects article texts.
     """
     article_urls = get_article_urls(team_archive, num_pages)
     for url in article_urls:
         extracted_fields = parse_article(url)
         print(extracted_fields)
         rate_limit()
-        
 
-# MAIN
+        
+########## TEST #############
 pakistan_archive = "https://www.wisden.com/team/pakistan-6/page/"
 pages = 1
 scrape_wisden(pakistan_archive, pages)
-
-
-# Next questions to think about
-# Is this the most efficient way to get all the links?
-
-# How far back do I want to go?
-# I think go back 10 years. 2016 Test team to now is a pretty compelling narrative and top of mind. I think you can track a decline and a fall in regard, atleast in the journalism.
-# So let's go till Sept 2016 - wisden goes back till 2017. 
-# The main years where I think the language gets bad is 2023 onwards - and then if you want to do everyone, then maybe do it till 2020 or 2021 T20 WC onwards
-
-# How do I want to store what I parse from the articles?
-# Will probably just want to store the cleaned text as is, so that later when I do more
-# processing i access it through that storage + if i decide to do soemthing diff
-# with the text then I don't have to undo or rescrape anything
-# How do I want to process what I parse from the articles? I think this will inform how I want to store it
-# Which countries articles will make for an interesting comparison? Big 3 definitely - India, Australia, England and then I think 3 other teams that have been down in the rankings.
-# Sri Lanka and West Indies have also struggled of late and Bangladesh is coming up but it's been down. I think even Afghanistan might be interesting. Lowkey I want to look at 
-# All the test playing nations
-
-# I think one thing to note is, some countries will have more coverage than others because some countries are richer and play more cricket. That will be something to keep in mind.
-# You need to figure out how many pages you have to parse for each country to get to the start of 2020 or maybe when regular schedules resumed post covid?
-
-
-# What is the best way to process in order to capture patterns or sentiment in the language? Do I just want to look at the most frequently used words or are there other ways?
-# Need to look into Sentiment analysis
-# Another thing to keep in mind is I want to also try data visualising and maybe
-# some analysis are more conducive for data vis than others - maybe I can try
-# a couple different analysis?
-
-
-
-# When you're doing the write up, you could talk about checking robots.txt
-# to make sure your scraping is cool
-
-
