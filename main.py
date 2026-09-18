@@ -11,10 +11,16 @@ import wisden_scraper
 # The scraper functions should either return data, or return None along w some info if unable to return data
 # The functions here will keep track of what that means and how to handle it, so I'm moving the issue handling
 # out from the scraper to this orchestrator
+# Furthermore, I realised I'm only handling for failures when fetching the listing pages,
+# I should also be handling for failures in the parse function when I'm fetching individual articles
+# I also need to think about the order in which things get moved to DB storage.
+# Right now it's get all links, then get 10 articles at a time, and then arguably store
+# 10 at a time in the DB. But would listing link->articles->store in DB, repeat be better?
+
 MAX_CONSECUTIVE_FAILURES = 3  # After which, we stop scraping.
 
 
-def rate_limit():  # This might need to be moved to the orchestrator
+def rate_limit():
     """
     Suspends execution for a random number of seconds within a given range.
     """
@@ -28,9 +34,9 @@ def get_article_urls(base_archive_url, num_pages):
     Calls wisden_scraper.py on a Wisden team archive to collect
     article URLs.
 
-    Iterates through a fixed number of paginated archive pages 
+    Iterates through a fixed number of paginated archive pages
     (https://www.wisden.com/team/{team_name}-{team_number}/page/{n}).
-    
+
     Stops scraping early if MAX_CONSECUTIVE_FAILURES failed page
     fetches occur in a row, in order to avoid hammering a
     server that may be blocking requests.
@@ -72,21 +78,34 @@ def get_article_urls(base_archive_url, num_pages):
 
     return article_urls
 
-def get_articles(article_urls):
-    # Loop through urls
-    # Check for consecutive failures
-    # Call parse_article() on each article
-    # If not None, push articles extracted fields to db
+
+def parse_and_store_articles(article_urls):
+    consecutive_failures = 0
+
     for url in article_urls:
         extracted_fields = wisden_scraper.parse_article(url)
+        if extracted_fields is None:
+            consecutive_failures += 1
+            print(f"Failed on article {url}")
+            if consecutive_failures > MAX_CONSECUTIVE_FAILURES:
+                print("Too many consecutive failures - stopping article parsing")
+                break
+            else:
+                rate_limit()
+                continue  # Need to figure out what to do if a page gets missed
+            
+        # Else
+        consecutive_failures = 0  # Reset
         print(extracted_fields)
+        # TODO: Push to DB
         rate_limit()
 
 
 ########## TEST #############
 pakistan_archive = "https://www.wisden.com/team/pakistan-6/page/"
 pages = 1
-get_articles(get_article_urls(pakistan_archive, pages))
+parse_and_store_articles(get_article_urls(pakistan_archive, pages))  # Kewl it works
+
 
 # Reference Links:
 # Wisden: https://www.wisden.com
@@ -94,20 +113,3 @@ get_articles(get_article_urls(pakistan_archive, pages))
 # Random Documentation: https://docs.python.org/3/library/random.html
 # HTTPS Status Codes: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
 # Rate Limiting: https://scrape.do/blog/web-scraping-rate-limit/
-
-# Thinking about separation of concerns:
-# I want the scraper code and the DB code to be separate and not know about eachother
-# I want to write a third "orchestrator script" that calls functions from both
-# Here's something important to think about:
-# Right now, I'm checking for errors in the get requests in the scraper
-# I stop scraping for links if there are too many errors
-# Arguably, that's a separation of concerns issue and something the orchestrator
-# should worry about, not the scraper, but I need to think about what that looks like
-# Furthermore, I realised I'm only handling for failures when fetching the listing pages,
-# I should also be handling for failures in the parse function when I'm fetching individual articles
-# I also need to think about the order in which things get moved to DB storage.
-# Right now it's get all links, then get 10 articles at a time, and then arguably store
-# 10 at a time in the DB. But would listing link->articles->store in DB, repeat be better?
-# What should I do first? Set up DB, edit scraper or figure out orchestrator?
-# I think figure out what the orchestrator needs to be doing, that will then
-# dictate what the scraper and db scripts should look like

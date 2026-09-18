@@ -7,7 +7,7 @@ HEADERS = {
 }
 
 
-def get_clean_text(tag):  # This can stay here and as is
+def get_clean_text(tag):
     """
     Returns clean text within HTML tag, returns None if empty tag.
     """
@@ -16,7 +16,7 @@ def get_clean_text(tag):  # This can stay here and as is
     return " ".join(tag.get_text().split())
 
 
-def safe_get(url):  # This can stay here and as is
+def safe_get(url):
     """
     Wraps requests.get() with error handling for request timeouts,
     rate-limit responses (429), and bot-block responses (403/503).
@@ -58,11 +58,37 @@ def safe_get(url):  # This can stay here and as is
     return response
 
 
-def parse_article(url):  # This can stay here and as is
+def get_archive_page(url):
+    response = safe_get(url)
+    if response is None:
+        return None
+    else:
+        return response
+
+
+def get_urls_in_archive_page(response):
+    links = []  # To store the 10 article links on an archive page
+    html = response.text
+    soup = BeautifulSoup(html, "html.parser")
+
+    articles = soup.find_all("article")
+    if articles is None:
+        return None
+
+    for article in articles:
+        a_tag = article.find("a")
+        if (a_tag and a_tag.get('href')):  # Handle missing <a> tags and links.
+            links.append(a_tag.get('href')) # There is only ever one link within an <article>, therefore this is safe to do.
+
+    print(f"Total {len(links)} article links collected from this archive page")
+    return links
+
+
+def parse_article(url):
     """
     Fetches and parses a single article.
     Returns a dict of extracted fields, or None if the fetch failed.
-    Tested on: 
+    Tested on:
     - Recent article from 2026: "https://www.wisden.com/series/england-vs-pakistan-m-2026/cricket-features/why-are-pakistan-this-bad-at-test-cricket"
     - Oldest listed article from 2017: "https://www.wisden.com/cricket-news/2017-review-legend-leaves-one-last-gift"
     """
@@ -99,33 +125,8 @@ def parse_article(url):  # This can stay here and as is
     }
 
 
-def get_archive_page(url):
-    response = safe_get(url)
-    if response is None:
-        return None
-    else:
-        return response
-    
-
-def get_urls_in_archive_page(response):
-    links = []  # To store the 10 article links on an archive page
-    html = response.text
-    soup = BeautifulSoup(html, "html.parser")
-    
-    articles = soup.find_all("article")
-    if articles is None:
-        return None
-    
-    for article in articles:
-        a_tag = article.find("a")
-        if (a_tag and a_tag.get('href')):  # Handle missing <a> tags and links.
-            links.append(a_tag.get('href')) # There is only ever one link within an <article>, therefore this is safe to do.
-
-    print(f"Total {len(links)} article links collected from this archive page")
-    return links
-
-        
 ########## TEST #############
+
 
 # Reference Links:
 # Wisden: https://www.wisden.com
