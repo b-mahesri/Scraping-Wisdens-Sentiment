@@ -1,40 +1,60 @@
+import os
 import sqlite3
 
+file_name = "wisden.db"
 
-connection = sqlite3.connect("wisden.db")
-cursor = connection.cursor
+def init_db(db_name):
+    connection = sqlite3.connect(db_name)
+    cursor = connection.cursor()
 
+    create_table = """ 
+        CREATE TABLE IF NOT EXISTS articles (
+            url TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            date TEXT NOT NULL,
+            team TEXT NOT NULL,
+            series TEXT,
+            author TEXT,
+            body_text TEXT NOT NULL
+        )
+    """
 
-def init_db():
-    return None
+    cursor.execute(create_table)
+    connection.commit()
+    connection.close()
+    print("Wisden SQLite db created")
 
 
 def get_db():
+    if not os.path.exists("wisden.db"):
+        print("Database doesn't exist yet. Run init_db() first")
+        return None
+    
     connection = sqlite3.connect("wisden.db")
-    cursor = connection.cursor
-    connection.commit()
-    return cursor
+    return connection  # things like commit() and close() live with the connection, so we don't want to just return the cursor
 
-
+# a function that expects the shape of extracted_fields and does whatever
+# is need so that the fields can be inserted in the DB
 def insert_in_db():
     # cursor.execute(query)
+    # connection.commit()
+    # need to return anything?
+    # when inserting, format the date into YYYY-MM-DD
     return None
 
 
-def close_db():
-    return None
+def close_db(connection):
+    if connection is None:
+        print("Database connection is None.")
+        return
+    connection.commit()  # Not the primary commit, just a safety net
+    connection.close()
+    print("Database connection closed.")
 
 
 # Reference Links:
 # SQLite Documentation: https://docs.python.org/3/library/sqlite3.html
 
-# Will need to make a get_db() function, don't want main.py to directly open
-# a connection with the db
-# Likewise make a close_db() function and an insert_in_db()
-# also an init_db() that creates the db that main can call, main doesn't need
-# to worry about how exactly to create a db
-# a function that expects the shape of extracted_fields and does whatever
-# is need so that the fields can be inserted in the DB
 
 # When saving the articles to the db, we don't want to open and close
 # the db for each article. Open db once at the start before we parse all the
