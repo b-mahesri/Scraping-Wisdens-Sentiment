@@ -172,7 +172,7 @@ def get_article_urls(base_url, num_pages):
     print(f"Total {len(links)} article links collected")
     return links
 
-# TODO: Store the extracted text.
+
 def scrape_wisden(team_archive, num_pages):
     """
     Scrapes a Wisden team archive and collects article texts.
@@ -188,3 +188,21 @@ def scrape_wisden(team_archive, num_pages):
 pakistan_archive = "https://www.wisden.com/team/pakistan-6/page/"
 pages = 1
 scrape_wisden(pakistan_archive, pages)
+
+
+# Thinking about separation of concerns:
+# I want the scraper code and the DB code to be separate and not know about eachother
+# I want to write a third "orchestrator script" that calls functions from both
+# Here's something important to think about:
+# Right now, I'm checking for errors in the get requests in the scraper
+# I stop scraping for links if there are too many errors
+# Arguably, that's a separation of concerns issue and something the orchestrator
+# should worry about, not the scraper, but I need to think about what that looks like
+# Furthermore, I realised I'm only handling for failures when fetching the listing pages,
+# I should also be handling for failures in the parse function when I'm fetching individual articles
+# I also need to think about the order in which things get moved to DB storage.
+# Right now it's get all links, then get 10 articles at a time, and then arguably store
+# 10 at a time in the DB. But would listing link->articles->store in DB, repeat be better?
+# What should I do first? Set up DB, edit scraper or figure out orchestrator?
+# I think figure out what the orchestrator needs to be doing, that will then
+# dictate what the scraper and db scripts should look like
