@@ -1,4 +1,5 @@
 import requests
+from datetime import datetime
 from bs4 import BeautifulSoup
 
 
@@ -14,6 +15,15 @@ def get_clean_text(tag):
     if tag is None:
         return None
     return " ".join(tag.get_text().split())
+
+def format(date):
+    """
+    Input: Month(abr) DD, YYYY (%b %d, %Y)
+    Output: YYYY-MM-DD (%Y-%m-%d)
+    """
+    parsed = datetime.strptime(date, "%b %d, %Y") # Makes datetime object when told string format
+    formatted = parsed.strftime("%Y-%m-%d")  # Makes string from datetime object with given format
+    return formatted
 
 
 def safe_get(url):
@@ -84,7 +94,7 @@ def get_urls_in_archive_page(response):
     return links
 
 
-def parse_article(url):
+def parse_article(url, team):
     """
     Fetches and parses a single article.
     Returns a dict of extracted fields, or None if the fetch failed.
@@ -118,10 +128,11 @@ def parse_article(url):
     return {
         "url": url,
         "title": title,
-        "date": date,
+        "date": format(date),
         "series": series,
         "author": author,
         "body_text": body_text,
+        "team": team,
     }
 
 

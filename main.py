@@ -1,6 +1,7 @@
 import time
 import random
 import wisden_scraper
+import wisden_db
 
 
 # What does this script need to do?
@@ -79,11 +80,12 @@ def get_article_urls(base_archive_url, num_pages):
     return article_urls
 
 
-def parse_and_store_articles(article_urls):
+def parse_and_store_articles(article_urls, team):
     consecutive_failures = 0
-
+    # TODO: connection = wisden_db.get_db()
+    # TODO: cursor = connection.cursor()
     for url in article_urls:
-        extracted_fields = wisden_scraper.parse_article(url)
+        extracted_fields = wisden_scraper.parse_article(url, team)
         if extracted_fields is None:
             consecutive_failures += 1
             print(f"Failed on article {url}")
@@ -97,14 +99,24 @@ def parse_and_store_articles(article_urls):
         # Else
         consecutive_failures = 0  # Reset
         print(extracted_fields)
-        # TODO: Push to DB
+        # TODO: insert_db(connection, cursor, extracted_fields)
         rate_limit()
+
+    # TODO: wisden_db.close_db(connection)
 
 
 ########## TEST #############
-pakistan_archive = "https://www.wisden.com/team/pakistan-6/page/"
+team = "Pakistan"
+archive = "https://www.wisden.com/team/pakistan-6/page/"  # 168 pages
 pages = 1
-parse_and_store_articles(get_article_urls(pakistan_archive, pages))  # Kewl it works
+urls = get_article_urls(archive, pages)
+# TODO: init_db()
+parse_and_store_articles(urls, team)  # Kewl it works, idk if passing in team here is the best, but you don't want to have it to figure it out for each article, I already
+# know so might as well just pass it in here so it's going in in one place and the DB doesn't have to worry about it
+
+india_archive = "https://www.wisden.com/team/india-4/page/"  # 347 pages
+england_archive = "https://www.wisden.com/team/england-3/page/"  # 407 pages
+australia_archive = "https://www.wisden.com/team/australia-1/page/"  # 218 pages
 
 
 # Reference Links:

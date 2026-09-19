@@ -3,8 +3,8 @@ import sqlite3
 
 file_name = "wisden.db"
 
-def init_db(db_name):
-    connection = sqlite3.connect(db_name)
+def init_db():
+    connection = sqlite3.connect(file_name)
     cursor = connection.cursor()
 
     create_table = """ 
@@ -12,10 +12,10 @@ def init_db(db_name):
             url TEXT PRIMARY KEY,
             title TEXT NOT NULL,
             date TEXT NOT NULL,
-            team TEXT NOT NULL,
             series TEXT,
             author TEXT,
-            body_text TEXT NOT NULL
+            body_text TEXT NOT NULL,
+            team TEXT NOT NULL
         )
     """
 
@@ -35,12 +35,44 @@ def get_db():
 
 # a function that expects the shape of extracted_fields and does whatever
 # is need so that the fields can be inserted in the DB
-def insert_in_db():
-    # cursor.execute(query)
-    # connection.commit()
-    # need to return anything?
-    # when inserting, format the date into YYYY-MM-DD
-    return None
+def insert_in_db(connection, cursor, fields):
+    # this is the shape of the dict being passed in
+    # "url": url,
+    #         "title": title,
+    #         "date": date,
+    #         "series": series,
+    #         "author": author,
+    #         "body_text": body_text,
+    #         "team": team,
+
+    insert_row = """
+        INSERT INTO articles (
+            url, 
+            title, 
+            date, 
+            series, 
+            author, 
+            body_text, 
+            team)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """
+    data = (
+        fields["url"], 
+        fields["title"], 
+        fields["date"], 
+        fields["series"], 
+        fields["author"],
+        fields["body_text"],
+        fields["team"],
+        )
+
+    try:
+        cursor.execute(insert_row, data)
+        connection.commit()
+        return True
+    except sqlite3.IntegrityError:
+        print(f"Skipping duplicate: {fields["url"]}")
+        return False
 
 
 def close_db(connection):
@@ -50,6 +82,35 @@ def close_db(connection):
     connection.commit()  # Not the primary commit, just a safety net
     connection.close()
     print("Database connection closed.")
+
+
+def reset_db():
+    if os.path.exists(file_name):
+        os.remove(file_name)
+        print(f"Deleted {file_name}")
+    else:
+        print(f"{file_name} doesn't exist, nothing to delete")
+
+
+############## TEST ###############
+reset_db()
+# init_db()
+# connection = get_db()
+# data = {
+#         "url": "test_url",
+#         "title": "test title",
+#         "date": "YYYY-MM-DD",
+#         "series": "test series",
+#         "author": "test author",
+#         "body_text": "test body text",
+#         "team": "test team",
+#     }
+# insert_in_db(connection, connection.cursor(), data)
+# result = connection.cursor().execute("SELECT * FROM articles")
+# print(result.fetchone())
+# close_db(connection)
+# Testing is not thorough, but seems to work
+
 
 
 # Reference Links:
