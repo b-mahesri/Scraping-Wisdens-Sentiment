@@ -82,7 +82,7 @@ def get_article_urls(base_archive_url, num_pages):
 
 def parse_and_store_articles(article_urls, team):
     consecutive_failures = 0
-    # TODO: connection = wisden_db.get_db()
+    # TODO: connection = wisden_db.get_db() do we want to open a new connection for each team? Probably because I'll do 4 diff scrapes to avoid issues
     # TODO: cursor = connection.cursor()
     for url in article_urls:
         extracted_fields = wisden_scraper.parse_article(url, team)

@@ -1,7 +1,15 @@
 import os
 import sqlite3
 
+# NEXT TODO
+# TODO: Clean up the code and add documentation
+# TODO: Test everything more thoroughly and with one page of archives, look into the best way to test something like this
+# TODO: Add a couple of get() functions, get row given url, get all rows for a certain team
+# TODO: Look into sentiment analysis and decide which to start working on, do a very simple one first
+
+
 file_name = "wisden.db"
+
 
 def init_db():
     connection = sqlite3.connect(file_name)
@@ -33,9 +41,8 @@ def get_db():
     connection = sqlite3.connect("wisden.db")
     return connection  # things like commit() and close() live with the connection, so we don't want to just return the cursor
 
-# a function that expects the shape of extracted_fields and does whatever
-# is need so that the fields can be inserted in the DB
-def insert_in_db(connection, cursor, fields):
+
+def insert_in_db(connection, cursor, fields):  # Passing in cursor from main.py so that we don't create a new instance for each insert
     # this is the shape of the dict being passed in
     # "url": url,
     #         "title": title,
