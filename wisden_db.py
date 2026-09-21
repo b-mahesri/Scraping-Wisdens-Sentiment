@@ -100,7 +100,7 @@ def reset_db():
 
 
 ############## TEST ###############
-reset_db()
+# reset_db()
 # init_db()
 # connection = get_db()
 # data = {
