@@ -2,21 +2,8 @@ import time
 import random
 import wisden_scraper
 import wisden_db
+import test
 
-
-# What does this script need to do?
-# It needs to run the scraper and store the scraped data into the sqlite db
-
-# What should running the scraper look like, with separation of concerns?
-# Under separation of concerns, this script should worry about issues that may arise in scraping
-# The scraper functions should either return data, or return None along w some info if unable to return data
-# The functions here will keep track of what that means and how to handle it, so I'm moving the issue handling
-# out from the scraper to this orchestrator
-# Furthermore, I realised I'm only handling for failures when fetching the listing pages,
-# I should also be handling for failures in the parse function when I'm fetching individual articles
-# I also need to think about the order in which things get moved to DB storage.
-# Right now it's get all links, then get 10 articles at a time, and then arguably store
-# 10 at a time in the DB. But would listing link->articles->store in DB, repeat be better?
 
 MAX_CONSECUTIVE_FAILURES = 3  # After which, we stop scraping.
 
@@ -49,12 +36,12 @@ def get_article_urls(base_archive_url, num_pages):
 
     for page in range(num_pages):
         url = base_archive_url + str(page + 1)
-
         response = wisden_scraper.safe_get(url)
 
         if response is None:
             consecutive_failures += 1
-            print(f"Failed on listing page {page + 1}")
+            print(f"Failed to fetch archive page {page + 1}.")
+
             if consecutive_failures > MAX_CONSECUTIVE_FAILURES:
                 print("Too many consecutive failures - stopping link collection")
                 break  # End scraping loop
@@ -64,16 +51,15 @@ def get_article_urls(base_archive_url, num_pages):
 
         # Else
         consecutive_failures = 0  # Reset
-        print("Got the archive page, now getting the article urls")
-        article_urls = wisden_scraper.get_urls(response)
-        if article_urls:
-            for url in article_urls:
-                print(l)  # Sanity check
+
+        print("Fetched archive page {page + 1}. Now fetching article urls.")
+
+        urls = wisden_scraper.get_urls(response)
+        if urls:
+            test.print_urls(urls)
             article_urls = article_urls + urls
-            print(f"Listing Page {page + 1}: articles added")
         else:
-            # This is very unlikely to happen but have it incase
-            print(f"Listing Page {page + 1}: no articles found")
+            print(f"No articles scraped from archive page {page + 1}.")  # Unlikely
 
         rate_limit()  # Wait before fetching next archive page
 
@@ -85,10 +71,12 @@ def parse_and_store_articles(article_urls, team):
     # TODO: connection = wisden_db.get_db() do we want to open a new connection for each team? Probably because I'll do 4 diff scrapes to avoid issues
     # TODO: cursor = connection.cursor()
     for url in article_urls:
-        extracted_fields = wisden_scraper.parse_article(url, team)
-        if extracted_fields is None:
+        article = wisden_scraper.parse_article(url, team)
+
+        if article is None:
             consecutive_failures += 1
             print(f"Failed on article {url}")
+
             if consecutive_failures > MAX_CONSECUTIVE_FAILURES:
                 print("Too many consecutive failures - stopping article parsing")
                 break
@@ -98,7 +86,8 @@ def parse_and_store_articles(article_urls, team):
             
         # Else
         consecutive_failures = 0  # Reset
-        print(extracted_fields)
+
+        test.print_article(article)
         # TODO: insert_db(connection, cursor, extracted_fields)
         rate_limit()
 
@@ -106,13 +95,11 @@ def parse_and_store_articles(article_urls, team):
 
 
 ########## TEST #############
-team = "Pakistan"
-archive = "https://www.wisden.com/team/pakistan-6/page/"  # 168 pages
+pakistan_archive = "https://www.wisden.com/team/pakistan-6/page/"  # 168 pages
 pages = 1
-urls = get_article_urls(archive, pages)
+urls = get_article_urls(pakistan_archive, pages)
 # TODO: init_db()
-parse_and_store_articles(urls, team)  # Kewl it works, idk if passing in team here is the best, but you don't want to have it to figure it out for each article, I already
-# know so might as well just pass it in here so it's going in in one place and the DB doesn't have to worry about it
+parse_and_store_articles(urls, "Pakistan")
 
 india_archive = "https://www.wisden.com/team/india-4/page/"  # 347 pages
 england_archive = "https://www.wisden.com/team/england-3/page/"  # 407 pages

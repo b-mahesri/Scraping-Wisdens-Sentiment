@@ -8,7 +8,7 @@ HEADERS = {
 }
 
 
-def get_clean_text(tag):
+def get_clean_text(tag):  # Might need to update this to clean '\n'
     """
     Returns clean text within HTML tag, returns None if empty tag.
     """
