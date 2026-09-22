@@ -50,7 +50,7 @@ def get_article_urls(base_archive_url, num_pages):
     for page in range(num_pages):
         url = base_archive_url + str(page + 1)
 
-        response = wisden_scraper.get_archive_page(url)  # Returns a single archive page
+        response = wisden_scraper.safe_get(url)
 
         if response is None:
             consecutive_failures += 1
@@ -65,9 +65,9 @@ def get_article_urls(base_archive_url, num_pages):
         # Else
         consecutive_failures = 0  # Reset
         print("Got the archive page, now getting the article urls")
-        urls = wisden_scraper.get_urls_in_archive_page(response)
-        if urls:
-            for l in urls:
+        article_urls = wisden_scraper.get_urls(response)
+        if article_urls:
+            for url in article_urls:
                 print(l)  # Sanity check
             article_urls = article_urls + urls
             print(f"Listing Page {page + 1}: articles added")

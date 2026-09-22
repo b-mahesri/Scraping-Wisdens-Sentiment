@@ -68,15 +68,7 @@ def safe_get(url):
     return response
 
 
-def get_archive_page(url):
-    response = safe_get(url)
-    if response is None:
-        return None
-    else:
-        return response
-
-
-def get_urls_in_archive_page(response):
+def get_urls(response):
     links = []  # To store the 10 article links on an archive page
     html = response.text
     soup = BeautifulSoup(html, "html.parser")
@@ -134,9 +126,6 @@ def parse_article(url, team):
         "body_text": body_text,
         "team": team,
     }
-
-
-########## TEST #############
 
 
 # Reference Links:
