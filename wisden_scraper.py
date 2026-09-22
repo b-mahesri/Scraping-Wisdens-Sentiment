@@ -16,6 +16,7 @@ def get_clean_text(tag):  # Might need to update this to clean '\n'
         return None
     return " ".join(tag.get_text().split())
 
+
 def format(date):
     """
     Input: Month(abr) DD, YYYY (%b %d, %Y)

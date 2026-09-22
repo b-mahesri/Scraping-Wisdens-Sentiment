@@ -52,7 +52,7 @@ def get_article_urls(base_archive_url, num_pages):
         # Else
         consecutive_failures = 0  # Reset
 
-        print("Fetched archive page {page + 1}. Now fetching article urls.")
+        print(f"Fetched archive page {page + 1}. Now fetching article urls.")
 
         urls = wisden_scraper.get_urls(response)
         if urls:
@@ -66,10 +66,9 @@ def get_article_urls(base_archive_url, num_pages):
     return article_urls
 
 
-def parse_and_store_articles(article_urls, team):
+def parse_and_store_articles(article_urls, team, db_connection, db_cursor):
     consecutive_failures = 0
-    # TODO: connection = wisden_db.get_db() do we want to open a new connection for each team? Probably because I'll do 4 diff scrapes to avoid issues
-    # TODO: cursor = connection.cursor()
+    
     for url in article_urls:
         article = wisden_scraper.parse_article(url, team)
 
@@ -87,23 +86,27 @@ def parse_and_store_articles(article_urls, team):
         # Else
         consecutive_failures = 0  # Reset
 
-        test.print_article(article)
-        # TODO: insert_db(connection, cursor, extracted_fields)
+        # test.print_article(article)
+        wisden_db.insert_in_db(db_connection, db_cursor, article)
         rate_limit()
-
-    # TODO: wisden_db.close_db(connection)
 
 
 ########## TEST #############
 pakistan_archive = "https://www.wisden.com/team/pakistan-6/page/"  # 168 pages
 pages = 1
 urls = get_article_urls(pakistan_archive, pages)
-# TODO: init_db()
-parse_and_store_articles(urls, "Pakistan")
+wisden_db.reset_db()
+wisden_db.init_db()
+connection = wisden_db.get_db()
+cursor = connection.cursor()
+parse_and_store_articles(urls, "Pakistan", connection, cursor)
+rows = wisden_db.get_all_rows("Pakistan", cursor)
+test.print_db_output(rows)
+wisden_db.close_db(connection) # Looks like it works
 
-india_archive = "https://www.wisden.com/team/india-4/page/"  # 347 pages
-england_archive = "https://www.wisden.com/team/england-3/page/"  # 407 pages
-australia_archive = "https://www.wisden.com/team/australia-1/page/"  # 218 pages
+# india_archive = "https://www.wisden.com/team/india-4/page/"  # 347 pages
+# england_archive = "https://www.wisden.com/team/england-3/page/"  # 407 pages
+# australia_archive = "https://www.wisden.com/team/australia-1/page/"  # 218 pages
 
 
 # Reference Links:
