@@ -92,17 +92,18 @@ def parse_and_store_articles(article_urls, team, db_connection, db_cursor):
 
 
 ########## TEST #############
-pakistan_archive = "https://www.wisden.com/team/pakistan-6/page/"  # 168 pages
-pages = 1
-urls = get_article_urls(pakistan_archive, pages)
-wisden_db.reset_db()
-wisden_db.init_db()
-connection = wisden_db.get_db()
-cursor = connection.cursor()
-parse_and_store_articles(urls, "Pakistan", connection, cursor)
-rows = wisden_db.get_all_rows("Pakistan", cursor)
-test.print_db_output(rows)
-wisden_db.close_db(connection) # Looks like it works
+# pakistan_archive = "https://www.wisden.com/team/pakistan-6/page/"  # 168 pages
+# pages = 1
+# urls = get_article_urls(pakistan_archive, pages)
+# wisden_db.reset_db()
+# wisden_db.init_db()
+# connection = wisden_db.get_db()
+# cursor = connection.cursor()
+# parse_and_store_articles(urls, "Pakistan", connection, cursor)
+# rows = wisden_db.get_all_rows("Pakistan", cursor)
+# test.print_db_output(rows)
+# wisden_db.close_db(connection) # Looks like it works
+
 
 # india_archive = "https://www.wisden.com/team/india-4/page/"  # 347 pages
 # england_archive = "https://www.wisden.com/team/england-3/page/"  # 407 pages
