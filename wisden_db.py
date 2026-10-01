@@ -111,6 +111,17 @@ def get_all_rows(team, cursor):
     # fetchall() returns all the rows the query returned
     # each row is a tuple, so it returns a list of tuples
 
+def count_rows_in_db(cursor, team):
+    query = """
+        SELECT COUNT(*) FROM articles
+        WHERE team = ?
+    """
+    team = (
+        team,
+    )
+    cursor.execute(query, team)
+    return cursor.fetchone()[0]
+
 
 def get_text(article_url, cursor):
     query = """
@@ -128,7 +139,9 @@ def get_text(article_url, cursor):
     # again it'll return the second row and advance the cursor 
     # to the third row and so on
 
-
+if __name__ == "__main__":
+    num_rows = count_rows_in_db(get_db().cursor(), "Pakistan")
+    print(num_rows)
 
 # Reference Links:
 # SQLite Documentation: https://docs.python.org/3/library/sqlite3.html

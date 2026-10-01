@@ -155,14 +155,13 @@ def scrape_and_store_archive(team):
     parse_and_store_articles(urls, team, connection, cursor)
 
     # Test
-    rows = wisden_db.get_all_rows(team, cursor)
-    wisden_test.print_db_output(rows)
+    print(f"{wisden_db.count_rows_in_db(cursor, team)} {team} articles uploaded to db.")
 
     wisden_db.close_db(connection)
 
 
 if __name__ == "__main__":
-    # Bismillah, wisden pls don't block
+    # It didn't block but will have to run again there's not enough articles in the db eventhough terminal shows the whole thing ran
     scrape_and_store_archive("Pakistan")
 
     # TODO: Later
