@@ -1,9 +1,9 @@
-import time
 import random
-import wisden_scraper
-import wisden_db
 import test
+import time
 
+import wisden_db
+import wisden_scraper
 
 archive_urls = {
     "Australia": "https://www.wisden.com/team/australia-1/page/",  # 218 pages total
@@ -12,12 +12,12 @@ archive_urls = {
     "Pakistan": "https://www.wisden.com/team/pakistan-6/page/"  # 168 pages total
 }
 
-# The number of archive pages that need to be parsed in order to collect all articles between Jan 2020 - Now
+# The number of archive pages that need to be parsed in order to collect all articles between Oct 2021 - Now (last 5 years)
 num_archive_pages = {
-    "Australia": 159,
-    "England": 306,
-    "India": 294,
-    "Pakistan": 143
+    "Australia": 120,  # 1200 articles
+    "England": 229,  # 2290 articles
+    "India": 229,  # 2290 articles
+    "Pakistan": 122  # 1220 articles
 }
 
 MAX_CONSECUTIVE_FAILURES = 3  # After which, we stop scraping.
@@ -27,7 +27,7 @@ def rate_limit():
     """
     Suspends execution for a random number of seconds within a given range.
     """
-    sleep_time = random.uniform(5, 8)  # This will return a float, which is a little extra random
+    sleep_time = random.uniform(5, 10)  # This will return a float, which is a little extra random
     print(f"Being polite :) and avoiding Rate Limiting. Sleeping for {sleep_time:.1f} secondzzzzzzz")
     time.sleep(sleep_time)
 
