@@ -1,9 +1,11 @@
 import random
-import test
 import time
 
 import wisden_db
 import wisden_scraper
+import wisden_test
+
+# Note: run isort . to auto-sort imports according to PEP 8
 
 archive_urls = {
     "Australia": "https://www.wisden.com/team/australia-1/page/",  # 218 pages total
@@ -71,7 +73,7 @@ def get_article_urls(base_archive_url, num_pages):
 
         urls = wisden_scraper.get_urls(response)
         if urls:
-            test.print_urls(urls)
+            wisden_test.print_urls(urls)
             article_urls = article_urls + urls
         else:
             print(f"No articles scraped from archive page {page + 1}.")  # Unlikely
@@ -101,7 +103,7 @@ def parse_and_store_articles(article_urls, team, db_connection, db_cursor):
         # Else
         consecutive_failures = 0  # Reset
 
-        # test.print_article(article)
+        # wisden_test.print_article(article)
         wisden_db.insert_in_db(db_connection, db_cursor, article)
         rate_limit()
 
@@ -118,7 +120,7 @@ def scrape_and_store():
     parse_and_store_articles(pakistan_urls, "Pakistan", connection, cursor)
 
     rows = wisden_db.get_all_rows("Pakistan", cursor)
-    test.print_db_output(rows)
+    wisden_test.print_db_output(rows)
 
     wisden_db.close_db(connection) # Looks like it works
 
