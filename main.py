@@ -5,6 +5,21 @@ import wisden_db
 import test
 
 
+archive_urls = {
+    "Australia": "https://www.wisden.com/team/australia-1/page/",  # 218 pages total
+    "England": "https://www.wisden.com/team/england-3/page/",  # 407 pages total
+    "India": "https://www.wisden.com/team/india-4/page/",  # 347 pages total
+    "Pakistan": "https://www.wisden.com/team/pakistan-6/page/"  # 168 pages total
+}
+
+# The number of archive pages that need to be parsed in order to collect all articles between Jan 2020 - Now
+num_archive_pages = {
+    "Australia": 159,
+    "England": 306,
+    "India": 294,
+    "Pakistan": 143
+}
+
 MAX_CONSECUTIVE_FAILURES = 3  # After which, we stop scraping.
 
 
@@ -91,23 +106,25 @@ def parse_and_store_articles(article_urls, team, db_connection, db_cursor):
         rate_limit()
 
 
-########## TEST #############
-# pakistan_archive = "https://www.wisden.com/team/pakistan-6/page/"  # 168 pages
-# pages = 1
-# urls = get_article_urls(pakistan_archive, pages)
-# wisden_db.reset_db()
-# wisden_db.init_db()
-# connection = wisden_db.get_db()
-# cursor = connection.cursor()
-# parse_and_store_articles(urls, "Pakistan", connection, cursor)
-# rows = wisden_db.get_all_rows("Pakistan", cursor)
-# test.print_db_output(rows)
-# wisden_db.close_db(connection) # Looks like it works
+def scrape_and_store():
+    
+    pakistan_urls = get_article_urls(archive_urls["Pakistan"], num_archive_pages["Pakistan"])
+
+    wisden_db.reset_db()
+    wisden_db.init_db()
+    connection = wisden_db.get_db()
+    cursor = connection.cursor()
+
+    parse_and_store_articles(pakistan_urls, "Pakistan", connection, cursor)
+
+    rows = wisden_db.get_all_rows("Pakistan", cursor)
+    test.print_db_output(rows)
+
+    wisden_db.close_db(connection) # Looks like it works
 
 
-# india_archive = "https://www.wisden.com/team/india-4/page/"  # 347 pages
-# england_archive = "https://www.wisden.com/team/england-3/page/"  # 407 pages
-# australia_archive = "https://www.wisden.com/team/australia-1/page/"  # 218 pages
+########## Main #############
+scrape_and_store()
 
 
 # Reference Links:
