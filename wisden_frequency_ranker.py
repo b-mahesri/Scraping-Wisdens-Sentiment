@@ -38,51 +38,64 @@ CRICKET_STOPWORDS = set([
 
 ALL_STOPWORDS = ENGLISH_STOPWORDS.union(CRICKET_STOPWORDS)
 
-# TODO:
-# Think about how to store the result and how to scale the process for all the articles
+# Reference Links
+# collections documentation: https://docs.python.org/3/library/collections.html
 
+# Breaking it down step by step:
 
-# Bigger picture:
-# I want to do this by team for all the articles I scrape 
-# Because the number of articles for all the teams isn't the same, I will calculate the rate per 1,000 words for each word
-# Then I can look at the top 50 most frequently used words for each team and see if it reveals anything
+# What I want at the end: 
+# 4 lists, one for each team, of the 50 most frequently used words
+# accross all articles, where frequency is normalised to rate per 1,000 words
 
-# I ran main.py, the db is populated with 10 articles
+# 1) For each team, initialise a Counter
+# 2) pull all article body_texts
+#   probably not a good idea to pull all articles at once, better to do something
+#   like 10 at a time so that the program doesn't use too much memory
+#   Say you pull 10 at a time
+# 3) For each body_text, clean it, make a list of words, filter the list
+# 4) then update counter with that filtered list
+# 5) When you've done this for every article for that team, run counter.most_common(50) and store it 
+#   (list? or do I just want to save the counters? Do i want to write to a txt or csv?)
+
+# I ran main.py, the db is populated with all Pakistan articles
 # Will use this article for now:
 # 'https://www.wisden.com/cricket-news/explained-why-pakistan-have-reappointed-babar-azam-three-years-after-test-captain'
 
-def test_concept():
-    connection = wisden_db.get_db()
-    cursor = connection.cursor()
 
-    article_url = 'https://www.wisden.com/cricket-news/explained-why-pakistan-have-reappointed-babar-azam-three-years-after-test-captain'
-    body_text = wisden_db.get_text(article_url, cursor)[0]  # a tuple with one item is returned, python tuples have zero based indexing
-
-    body_text = body_text.lower()  # convert every character to lowercase
-    words = re.findall(r"\b[a-zA-Z]+\b", body_text)  # will ignore all punctuation and digits and will return all words in the string as a list
+def clean_text(body_text):
+    body_text = body_text.lower()  # conver every character in the string to lower case
+    words = re.findall(r"\b[a-zA-Z]+\b", body_text)  # Ignore all punctuation and digits, convert string to a list of words
 
     filtered_words = []
     for word in words:
         if word not in ALL_STOPWORDS:
             filtered_words.append(word)
 
-    frequency_counter = collections.Counter(filtered_words)  # Counter is a special data structure. It's pretty much a dict, key is the word and value is frequency. The constructor can take a list of words and figure out their frequencies
-    most_common = frequency_counter.most_common()  # Will return list of all (word, count) in order from most common to least
-    for word, count in most_common:
-        print(word, ":", count)
+    return filtered_words
+
+def test_concept():
+    frequency_counter = collections.Counter() # Empty
+
+    connection = wisden_db.get_db()
+    cursor = connection.cursor()
+
+    # TODO: Loop for getting 10 articles at a time
+
+    # Placeholder
+    article_urls = ['https://www.wisden.com/cricket-news/explained-why-pakistan-have-reappointed-babar-azam-three-years-after-test-captain']
+    for url in article_urls:
+
+        # Placeholder
+        body_text = wisden_db.get_text(url, cursor)[0]  # a tuple with one item is returned, python tuples have zero based indexing
+
+        filtered_words = clean_text(body_text)
+
+        frequency_counter.update(filtered_words)  # Counter is a special data structure. It's pretty much a dict, key is the word and value is frequency. The constructor can take a list of words and figure out their frequencies
+        
+        most_common = frequency_counter.most_common(50)  # Will return list of all (word, count) in order from most common to least
+        for word, count in most_common:
+            print(word, ":", count)
 
 
 if __name__ == "__main__":
     test_concept()
-
-# You will basically make a filtered list for each article and then add the frequency up in one counter:
-# final_counter = counter1 + counter2 ... countern
-# the '+' operator adds/merges counters DON'T this creates a new counter each time
-# instead use final_counter.update(<new_filtered_list> ) to avoid that
-
-# then in the end do final_counter.most_common(50) to get 50 most common words
-
-
-# Reference Links
-# collections documentation: https://docs.python.org/3/library/collections.html
-

@@ -143,10 +143,12 @@ def scrape_and_store_archive(team):
     then closes the database connection.
     """
     
-    urls = get_article_urls(teams[team].archive_url, 1)  # TODO: Update to teams[team].num_pages
+    urls = get_article_urls(teams[team].archive_url, teams[team].num_pages)
 
-    wisden_db.reset_db()
+    # Once you've run it for the first team, remove these 2 lines
+    wisden_db.reset_db() 
     wisden_db.init_db()
+
     connection = wisden_db.get_db()
     cursor = connection.cursor()
 
@@ -160,6 +162,7 @@ def scrape_and_store_archive(team):
 
 
 if __name__ == "__main__":
+    # Bismillah, wisden pls don't block
     scrape_and_store_archive("Pakistan")
 
     # TODO: Later
