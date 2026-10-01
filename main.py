@@ -1,54 +1,76 @@
+"""
+main.py - Orchestrates scraping and storing Wisden cricket articles.
+
+Reference Links:
+    Wisden: https://www.wisden.com
+
+    Random Documentation: https://docs.python.org/3/library/random.html
+    Time Documentation: https://docs.python.org/3/library/time.html#time.sleep
+    Data Classes Documentation: https://docs.python.org/3/library/dataclasses.html
+
+    HTTPS Status Codes: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
+    Rate Limiting: https://scrape.do/blog/web-scraping-rate-limit/
+
+"""
+
+
 import random
 import time
+from dataclasses import dataclass
 
 import wisden_db
 import wisden_scraper
-import wisden_test
+import wisden_test  # run 'isort .' to auto-sort imports according to PEP 8
 
-# Note: run isort . to auto-sort imports according to PEP 8
 
-archive_urls = {
-    "Australia": "https://www.wisden.com/team/australia-1/page/",  # 218 pages total
-    "England": "https://www.wisden.com/team/england-3/page/",  # 407 pages total
-    "India": "https://www.wisden.com/team/india-4/page/",  # 347 pages total
-    "Pakistan": "https://www.wisden.com/team/pakistan-6/page/"  # 168 pages total
+@dataclass
+class TeamArchive:
+    archive_url: str
+    num_pages: int
+
+teams = {
+    "Australia": TeamArchive(
+        "https://www.wisden.com/team/australia-1/page/", 
+        120  # Oct 2021 - Now: 120 pages - Complete archive: 218 pages
+    ),
+    "England": TeamArchive(
+        "https://www.wisden.com/team/england-3/page/",
+        229  # Oct 2021 - Now: 229 pages - Complete archive: 407 pages
+    ),
+    "India": TeamArchive(
+        "https://www.wisden.com/team/india-4/page/", 
+        229  # Oct 2021 - Now: 229 pages - Complete archive: 347 pages
+    ),
+    "Pakistan": TeamArchive(
+        "https://www.wisden.com/team/pakistan-6/page/", 
+        122  # Oct 2021 - Now: 122 pages - Compelete archive: 168 pages
+    )
 }
 
-# The number of archive pages that need to be parsed in order to collect all articles between Oct 2021 - Now (last 5 years)
-num_archive_pages = {
-    "Australia": 120,  # 1200 articles
-    "England": 229,  # 2290 articles
-    "India": 229,  # 2290 articles
-    "Pakistan": 122  # 1220 articles
-}
-
-MAX_CONSECUTIVE_FAILURES = 3  # After which, we stop scraping.
+MAX_CONSECUTIVE_FAILURES = 3  # After which, we stop scraping
 
 
-def rate_limit():
+def wait_between_requests():
     """
-    Suspends execution for a random number of seconds within a given range.
+    Rate Limits - suspends execution for a random duration 
+    between the 5 - 10 seconds range.
     """
-    sleep_time = random.uniform(5, 10)  # This will return a float, which is a little extra random
+    sleep_time = random.uniform(5, 10)  # Returns a float, which is a little extra random
     print(f"Being polite :) and avoiding Rate Limiting. Sleeping for {sleep_time:.1f} secondzzzzzzz")
     time.sleep(sleep_time)
 
 
 def get_article_urls(base_archive_url, num_pages):
     """
-    Calls wisden_scraper.py on a Wisden team archive to collect
-    article URLs.
-
-    Iterates through a fixed number of paginated archive pages
+    Collects article URLs from a Wisden team's paginated archive
     (https://www.wisden.com/team/{team_name}-{team_number}/page/{n}).
 
-    Stops scraping early if MAX_CONSECUTIVE_FAILURES failed page
-    fetches occur in a row, in order to avoid hammering a
-    server that may be blocking requests.
+    Stops early after MAX_CONSECUTIVE_FAILURES failed page fetches,
+    to avoid hammering a server that may be blocking requests.
 
     Returns a list of article URLs.
     """
-    article_urls = []  # I will think about if this needs to be set given sqlite db takes care of deduplication
+    article_urls = []
     consecutive_failures = 0
 
     for page in range(num_pages):
@@ -61,29 +83,34 @@ def get_article_urls(base_archive_url, num_pages):
 
             if consecutive_failures > MAX_CONSECUTIVE_FAILURES:
                 print("Too many consecutive failures - stopping link collection")
-                break  # End scraping loop
+                break
             else:
-                rate_limit()  # Wait before fetching next archive page
-                continue  # Need to figure out what to do if a page gets missed
+                wait_between_requests()
+                continue  # TODO: How to handle a skipped page?
 
-        # Else
+        # else:
         consecutive_failures = 0  # Reset
 
         print(f"Fetched archive page {page + 1}. Now fetching article urls.")
-
         urls = wisden_scraper.get_urls(response)
         if urls:
             wisden_test.print_urls(urls)
-            article_urls = article_urls + urls
+            article_urls.extend(urls)
         else:
             print(f"No articles scraped from archive page {page + 1}.")  # Unlikely
 
-        rate_limit()  # Wait before fetching next archive page
+        wait_between_requests()
 
     return article_urls
 
 
 def parse_and_store_articles(article_urls, team, db_connection, db_cursor):
+    """
+    Parses and stores each article in article_urls into the database.
+
+    Stops early after MAX_CONSECUTIVE_FAILURES failed article fetches
+    in a row, to avoid hammering a server that may be blocking requests.
+    """
     consecutive_failures = 0
     
     for url in article_urls:
@@ -97,41 +124,44 @@ def parse_and_store_articles(article_urls, team, db_connection, db_cursor):
                 print("Too many consecutive failures - stopping article parsing")
                 break
             else:
-                rate_limit()
-                continue  # Need to figure out what to do if a page gets missed
+                wait_between_requests()
+                continue  # TODO: How to handle a missed article?
             
-        # Else
+        # else:
         consecutive_failures = 0  # Reset
 
-        # wisden_test.print_article(article)
+        wisden_test.print_article(article)
         wisden_db.insert_in_db(db_connection, db_cursor, article)
-        rate_limit()
+
+        wait_between_requests()
 
 
-def scrape_and_store():
+def scrape_and_store_archive(team):
+    """
+    Runs the full pipeline: collects team's article URLs, 
+    sets up the database, scrapes and stores each article, 
+    then closes the database connection.
+    """
     
-    pakistan_urls = get_article_urls(archive_urls["Pakistan"], num_archive_pages["Pakistan"])
+    urls = get_article_urls(teams[team].archive_url, 1)  # TODO: Update to teams[team].num_pages
 
     wisden_db.reset_db()
     wisden_db.init_db()
     connection = wisden_db.get_db()
     cursor = connection.cursor()
 
-    parse_and_store_articles(pakistan_urls, "Pakistan", connection, cursor)
+    parse_and_store_articles(urls, team, connection, cursor)
 
-    rows = wisden_db.get_all_rows("Pakistan", cursor)
+    # Test
+    rows = wisden_db.get_all_rows(team, cursor)
     wisden_test.print_db_output(rows)
 
-    wisden_db.close_db(connection) # Looks like it works
+    wisden_db.close_db(connection)
 
 
-########## Main #############
-scrape_and_store()
+if __name__ == "__main__":
+    scrape_and_store_archive("Pakistan")
 
-
-# Reference Links:
-# Wisden: https://www.wisden.com
-# Time Documentation: https://docs.python.org/3/library/time.html#time.sleep
-# Random Documentation: https://docs.python.org/3/library/random.html
-# HTTPS Status Codes: https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status
-# Rate Limiting: https://scrape.do/blog/web-scraping-rate-limit/
+    # TODO: Later
+    # for team in ["Australia", "England", "India", "Pakistan"]:
+    #   scrape_and_store_archive(team)
