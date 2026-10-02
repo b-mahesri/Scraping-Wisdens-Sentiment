@@ -38,7 +38,9 @@ def get_db():
         return None
     
     connection = sqlite3.connect("wisden.db")
-    return connection  # things like commit() and close() live with the connection, so we don't want to just return the cursor
+    connection.row_factory = sqlite3.Row  # Now when you fetch a row from the db, it'll behave like a hybrid tuple + dict where you can index into it and also access it by column name
+    return connection  
+    # things like commit() and close() live with the connection, so we don't want to just return the cursor
 
 
 def insert_in_db(connection, cursor, fields):  # Passing in cursor from main.py so that we don't create a new instance for each insert
