@@ -143,11 +143,8 @@ def scrape_and_store_archive(team):
     then closes the database connection.
     """
     
-    urls = get_article_urls(teams[team].archive_url, teams[team].num_pages)
-
-    # Once you've run it for the first team, remove these 2 lines
-    wisden_db.reset_db() 
-    wisden_db.init_db()
+    # urls = get_article_urls(teams[team].archive_url, teams[team].num_pages)
+    urls = get_article_urls(teams[team].archive_url, 1) # for testing
 
     connection = wisden_db.get_db()
     cursor = connection.cursor()
@@ -156,14 +153,21 @@ def scrape_and_store_archive(team):
 
     # Test
     print(f"{wisden_db.count_rows_in_db(cursor, team)} {team} articles uploaded to db.")
+    print(f"{wisden_db.count_rows_in_db(cursor)} total articles uploaded to db.")
 
     wisden_db.close_db(connection)
 
 
 if __name__ == "__main__":
     # It didn't block but will have to run again there's not enough articles in the db eventhough terminal shows the whole thing ran
-    scrape_and_store_archive("Pakistan")
+    wisden_db.reset_db() 
+    wisden_db.init_db()
+    for team in ["Australia", "England", "India", "Pakistan"]:
+        scrape_and_store_archive(team)
 
-    # TODO: Later
-    # for team in ["Australia", "England", "India", "Pakistan"]:
-    #   scrape_and_store_archive(team)
+# ISSUE: Some articles appear under multiple teams, 
+# so when they get pushed to the db duplicates get skipped, 
+# And it get treated like just one teams article
+# I don't know how important it is to address it
+
+    

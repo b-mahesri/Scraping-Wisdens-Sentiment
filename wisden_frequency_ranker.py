@@ -63,10 +63,10 @@ ALL_STOPWORDS = ENGLISH_STOPWORDS.union(CRICKET_STOPWORDS)
 
 
 def clean_text(body_text):
+    filtered_words = []
+
     body_text = body_text.lower()  # conver every character in the string to lower case
     words = re.findall(r"\b[a-zA-Z]+\b", body_text)  # Ignore all punctuation and digits, convert string to a list of words
-
-    filtered_words = []
     for word in words:
         if word not in ALL_STOPWORDS:
             filtered_words.append(word)
@@ -80,6 +80,7 @@ def test_concept():
     cursor = connection.cursor()
 
     # TODO: Loop for getting 10 articles at a time
+    #       I wrote the function, I can write the loop tomorrow
 
     # Placeholder
     article_urls = ['https://www.wisden.com/cricket-news/explained-why-pakistan-have-reappointed-babar-azam-three-years-after-test-captain']

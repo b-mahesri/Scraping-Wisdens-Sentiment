@@ -44,12 +44,12 @@ def get_db():
 def insert_in_db(connection, cursor, fields):  # Passing in cursor from main.py so that we don't create a new instance for each insert
     # this is the shape of the dict being passed in
     # "url": url,
-    #         "title": title,
-    #         "date": date,
-    #         "series": series,
-    #         "author": author,
-    #         "body_text": body_text,
-    #         "team": team,
+    # "title": title,
+    # "date": date,
+    # "series": series,
+    # "author": author,
+    # "body_text": body_text,
+    # "team": team,
 
     insert_row = """
         INSERT INTO articles (
@@ -98,31 +98,40 @@ def reset_db():
         print(f"{file_name} doesn't exist, nothing to delete")
 
 
-def get_all_rows(team, cursor):
-    get_all = """
-        SELECT * FROM articles
-        WHERE team = ?
-    """
-    team_tuple = (
-        team,
-    )
-    cursor.execute(get_all, team_tuple)  # Needs to always be a tuple
-    return cursor.fetchall()  
-    # fetchall() returns all the rows the query returned
-    # each row is a tuple, so it returns a list of tuples
+def count_rows_in_db(cursor, team=None):
+    if team:
+        query = """SELECT COUNT(*) FROM articles WHERE team = ?"""
+        cursor.execute(query, (team,))
+    else:
+        query = """SELECT COUNT(*) FROM articles"""
+        cursor.execute(query)
 
-def count_rows_in_db(cursor, team):
-    query = """
-        SELECT COUNT(*) FROM articles
-        WHERE team = ?
-    """
-    team = (
-        team,
-    )
-    cursor.execute(query, team)
     return cursor.fetchone()[0]
 
 
+# PAGINATION FUNCTION
+# LIMIT is how many rows you want the query to return
+# OFFSET determines from which row onwards you want the query to apply to
+# We can fix the LIMIT at 10 and then run a loop where OFFSET is incremented by 10 in each iteration
+# That way we can get 10 articles at a time rather than all of them at once
+def get_rows_paginated(cursor, limit, offset, team=None):
+    if team:
+        query = """
+            SELECT * FROM articles WHERE team = ? LIMIT ? OFFSET ?
+        """
+        cursor.execute(query, (team, limit, offset))
+    else:
+        query = """
+            SELECT * FROM articles LIMIT ? OFFSET ?
+        """
+        cursor.execute(query, (limit, offset))
+
+    return cursor.fetchall()
+    # fetchall() returns all the rows the query returned
+    # each row is a tuple, so it returns a list of tuples
+
+
+# Temp test function for frequency ranker
 def get_text(article_url, cursor):
     query = """
         SELECT body_text FROM ARTICLES
@@ -139,9 +148,14 @@ def get_text(article_url, cursor):
     # again it'll return the second row and advance the cursor 
     # to the third row and so on
 
+
 if __name__ == "__main__":
-    num_rows = count_rows_in_db(get_db().cursor(), "Pakistan")
-    print(num_rows)
+    cursor = get_db().cursor()
+    print(f"{count_rows_in_db(cursor, "Australia")} Australia articles uploaded to db.")
+    print(f"{count_rows_in_db(cursor, "England")} England articles uploaded to db.")
+    print(f"{count_rows_in_db(cursor, "India")} India articles uploaded to db.")
+    print(f"{count_rows_in_db(cursor, "Pakistan")} Pakistan articles uploaded to db.")
+    print(f"{count_rows_in_db(cursor)} total articles uploaded to db.")
 
 # Reference Links:
 # SQLite Documentation: https://docs.python.org/3/library/sqlite3.html
