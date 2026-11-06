@@ -144,7 +144,8 @@ def scrape_and_store_archive(team):
     """
     
     # urls = get_article_urls(teams[team].archive_url, teams[team].num_pages)
-    urls = get_article_urls(teams[team].archive_url, 1) # for testing
+    # urls = get_article_urls(teams[team].archive_url, 1) # for testing
+    urls = get_article_urls(teams[team].archive_url, teams[team].num_pages) # final
 
     connection = wisden_db.get_db()
     cursor = connection.cursor()
@@ -164,6 +165,8 @@ if __name__ == "__main__":
     wisden_db.init_db()
     for team in ["Australia", "England", "India", "Pakistan"]:
         scrape_and_store_archive(team)
+
+    print("All articles stored :)")
 
 # ISSUE: Some articles appear under multiple teams, 
 # so when they get pushed to the db duplicates get skipped, 

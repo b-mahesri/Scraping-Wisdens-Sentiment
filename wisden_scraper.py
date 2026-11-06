@@ -95,6 +95,7 @@ def parse_article(url, team):
     - Recent article from 2026: "https://www.wisden.com/series/england-vs-pakistan-m-2026/cricket-features/why-are-pakistan-this-bad-at-test-cricket"
     - Oldest listed article from 2017: "https://www.wisden.com/cricket-news/2017-review-legend-leaves-one-last-gift"
     """
+    # TODO: Up here, print the url for the article you're about to parse
     response = safe_get(url)
     if response is None:
         return None
@@ -107,6 +108,8 @@ def parse_article(url, team):
         print("No <article> tag found in {url}")
         return None
 
+    # TODO: Add handling for NoneType objects, it happened with atleast one article where there was no article body
+    #.      So don't let the code make an assumption it'll alway find what it's looking for
     title = get_clean_text(article.find("h1"))
     date = get_clean_text(article.find("span", class_="meta-date meta"))
     series = get_clean_text(article.find("a", class_="meta meta-category"))
